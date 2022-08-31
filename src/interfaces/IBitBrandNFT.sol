@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 ///
 /// @dev Interface for the BitBrand Rares
 ///
-interface IBitBrandRares {
+interface IBitBrandNFT {
     function initialize(
         string memory name_,
         string memory symbol_,

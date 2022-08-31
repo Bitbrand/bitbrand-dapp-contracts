@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "openzeppelin-contracts/contracts/access/AccessControl.sol";
 import "openzeppelin-contracts/contracts/proxy/Clones.sol";
 
-import "./interfaces/IBitBrandRares.sol";
+import "./interfaces/IBitBrandNFT.sol";
 
 struct ContractMetadata {
     address contractAddress;
@@ -67,7 +67,7 @@ contract BitBrandNFTRepository is AccessControl {
         }
 
         bytes32 salt = keccak256(abi.encodePacked(version_, name_, symbol_));
-        IBitBrandRares nft = IBitBrandRares(
+        IBitBrandNFT nft = IBitBrandNFT(
             Clones.cloneDeterministic(metadata.contractAddress, salt)
         );
         nft.initialize(

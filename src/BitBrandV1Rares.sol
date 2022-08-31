@@ -9,6 +9,7 @@ import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable
 import "openzeppelin-contracts-upgradeable/contracts/utils/CountersUpgradeable.sol";
 
 import "./interfaces/IERC2981.sol";
+import "./interfaces/IBitBrandNFT.sol";
 
 /// @custom:security-contact security@bitbrand.com
 contract BitBrandV1Rares is
@@ -17,13 +18,14 @@ contract BitBrandV1Rares is
     PausableUpgradeable,
     AccessControlUpgradeable,
     UUPSUpgradeable,
-    IERC2981
+    IERC2981,
+    IBitBrandNFT
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
+    CountersUpgradeable.Counter private _tokenIdCounter;
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    CountersUpgradeable.Counter private _tokenIdCounter;
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
     uint256 private constant ONE_PERCENT = 100;
@@ -111,6 +113,7 @@ contract BitBrandV1Rares is
     {
         return
             type(IERC2981).interfaceId == interfaceId ||
+            type(IBitBrandNFT).interfaceId == interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }
