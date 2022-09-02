@@ -53,10 +53,10 @@ contract BitBrandV1Rares is
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(PAUSER_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
-        _grantRole(UPGRADER_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, tx.origin);
+        _grantRole(PAUSER_ROLE, tx.origin);
+        _grantRole(MINTER_ROLE, tx.origin);
+        _grantRole(UPGRADER_ROLE, tx.origin);
 
         royaltyReceiver = royaltyReceiver_;
         royaltyPercentage = royaltyPercentage_;
