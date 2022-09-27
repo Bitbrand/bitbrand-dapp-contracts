@@ -113,10 +113,6 @@ contract BitBrandV1MKT is Pausable, AccessControl {
         address nftOnwer = nftContract.ownerOf(nftId);
         uint256 amount = price;
 
-        if (purchaseToken.balanceOf(msg.sender) < amount) {
-            revert NotEnoughBalance();
-        }
-
         (address royaltyReceiver, uint256 royaltyAmount) = nftContract
             .royaltyInfo(nftId, price);
         if (royaltyReceiver != nftOnwer && royaltyAmount > 0) {
