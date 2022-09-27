@@ -2,16 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import "openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
+import "openzeppelin-contracts-upgradeable/contracts/token/ERC721/IERC721Upgradeable.sol";
 
-import "./IERC2981.sol";
+import "./IERC2981Upgradeable.sol";
 
 error MaxSupplyReached(uint256 maxSupply);
 
 ///
 /// @dev Interface for the BitBrand Rares
 ///
-interface IBitBrandNFT is IERC721, IERC2981 {
+interface IBitBrandNFTUpgradeable is IERC721Upgradeable, IERC2981Upgradeable {
     function initialize(
         address deployer_,
         string memory name_,

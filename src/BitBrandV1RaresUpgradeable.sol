@@ -6,8 +6,8 @@ import "openzeppelin-contracts-upgradeable/contracts/security/PausableUpgradeabl
 import "openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
 
-import "./interfaces/IERC2981.sol";
-import "./interfaces/IBitBrandNFT.sol";
+import "./interfaces/IERC2981Upgradeable.sol";
+import "./interfaces/IBitBrandNFTUpgradeable.sol";
 
 /// @notice BitBrand NFT Rares V1
 /// @author thev.eth
@@ -17,8 +17,7 @@ contract BitBrandV1Rares is
     ERC721Upgradeable,
     PausableUpgradeable,
     AccessControlUpgradeable,
-    IERC2981,
-    IBitBrandNFT
+    IBitBrandNFTUpgradeable
 {
     uint256 private _nextTokenId;
     uint256 public maxSupply;
@@ -111,12 +110,16 @@ contract BitBrandV1Rares is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(IERC165, ERC721Upgradeable, AccessControlUpgradeable)
+        override(
+            IERC165Upgradeable,
+            ERC721Upgradeable,
+            AccessControlUpgradeable
+        )
         returns (bool)
     {
         return
-            type(IERC2981).interfaceId == interfaceId ||
-            type(IBitBrandNFT).interfaceId == interfaceId ||
+            type(IERC2981Upgradeable).interfaceId == interfaceId ||
+            type(IBitBrandNFTUpgradeable).interfaceId == interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }
