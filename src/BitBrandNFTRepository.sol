@@ -17,6 +17,9 @@ error NotAuthorized();
 error VersionNotFound();
 error VersionNotDeployable();
 
+/// @notice BitBrand NFT Repository
+/// @notice This contract is responsible for publishing and deploying new versions of BitBrand NFTs
+/// @author thev.eth
 contract BitBrandNFTRepository is AccessControl {
     bytes32 public constant DEPLOYER_ROLE = keccak256("DEPLOYER_ROLE");
     bytes32 public constant PUBLISHER_ROLE = keccak256("PUBLISHER_ROLE");
@@ -50,13 +53,23 @@ contract BitBrandNFTRepository is AccessControl {
         emit VersionRegistered(version, contractAddress);
     }
 
+    /// @notice Deploy a new NFT contract
+    /// @param version_ semver version of the contract
+    /// @param name_ of the NFT
+    /// @param symbol_ symbol of the NFT
+    /// @param royaltySplitter_ address that will receive royalties
+    /// @param royaltyPercentage_ percentage of royalties - 100 to 100_000
+    /// @param baseURI_ base URI of the NFT
+    /// @param maxSupply_ max supply of the NFT
+    /// @return address of the deployed NFT
     function deployNFT(
         bytes32 version_,
         string memory name_,
         string memory symbol_,
         address royaltySplitter_,
-        uint256 baseRoyalty_,
-        string memory _baseURI
+        uint256 royaltyPercentage_,
+        string memory baseURI_,
+        uint256 maxSupply_
     ) public onlyRole(DEPLOYER_ROLE) returns (address) {
         ContractMetadata storage metadata = contracts[version_];
         if (metadata.contractAddress == address(0)) {
@@ -71,21 +84,15 @@ contract BitBrandNFTRepository is AccessControl {
             Clones.cloneDeterministic(metadata.contractAddress, salt)
         );
         nft.initialize(
+            msg.sender,
             name_,
             symbol_,
             royaltySplitter_,
-            baseRoyalty_,
-            _baseURI
+            royaltyPercentage_,
+            baseURI_,
+            maxSupply_
         );
         emit DeployedNFT(address(nft), name_, symbol_);
         return address(nft);
-    }
-
-    function getVersionData(bytes32 version)
-        public
-        view
-        returns (ContractMetadata memory)
-    {
-        return contracts[version];
     }
 }

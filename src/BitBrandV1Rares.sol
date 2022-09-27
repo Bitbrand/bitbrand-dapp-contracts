@@ -5,28 +5,26 @@ import "openzeppelin-contracts-upgradeable/contracts/token/ERC721/ERC721Upgradea
 import "openzeppelin-contracts-upgradeable/contracts/security/PausableUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
-import "openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "openzeppelin-contracts-upgradeable/contracts/utils/CountersUpgradeable.sol";
 
 import "./interfaces/IERC2981.sol";
 import "./interfaces/IBitBrandNFT.sol";
 
+/// @notice BitBrand NFT Rares V1
+/// @author thev.eth
 /// @custom:security-contact security@bitbrand.com
 contract BitBrandV1Rares is
     Initializable,
     ERC721Upgradeable,
     PausableUpgradeable,
     AccessControlUpgradeable,
-    UUPSUpgradeable,
     IERC2981,
     IBitBrandNFT
 {
-    using CountersUpgradeable for CountersUpgradeable.Counter;
+    uint256 private _nextTokenId;
+    uint256 public maxSupply;
 
-    CountersUpgradeable.Counter private _tokenIdCounter;
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
     uint256 private constant ONE_PERCENT = 100;
     uint256 private constant MAX_ROYALTY = 100 * ONE_PERCENT;
@@ -34,7 +32,7 @@ contract BitBrandV1Rares is
     address royaltyReceiver;
     uint256 royaltyPercentage;
 
-    string private _dynamicBaseURI;
+    string private _overrideBaseURI;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -42,25 +40,27 @@ contract BitBrandV1Rares is
     }
 
     function initialize(
+        address deployer_,
         string memory name_,
         string memory symbol_,
         address royaltyReceiver_,
         uint256 royaltyPercentage_,
-        string memory baseURI_
+        string memory baseURI_,
+        uint256 maxSupply_
     ) public initializer {
         __ERC721_init(name_, symbol_);
         __Pausable_init();
         __AccessControl_init();
-        __UUPSUpgradeable_init();
 
-        _grantRole(DEFAULT_ADMIN_ROLE, tx.origin);
-        _grantRole(PAUSER_ROLE, tx.origin);
-        _grantRole(MINTER_ROLE, tx.origin);
-        _grantRole(UPGRADER_ROLE, tx.origin);
+        _grantRole(DEFAULT_ADMIN_ROLE, deployer_);
+        _grantRole(PAUSER_ROLE, deployer_);
+        _grantRole(MINTER_ROLE, deployer_);
 
         royaltyReceiver = royaltyReceiver_;
         royaltyPercentage = royaltyPercentage_;
-        _dynamicBaseURI = baseURI_;
+        _overrideBaseURI = baseURI_;
+        maxSupply = maxSupply_;
+        _nextTokenId = 1;
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -72,8 +72,14 @@ contract BitBrandV1Rares is
     }
 
     function safeMint(address to) public onlyRole(MINTER_ROLE) {
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
+        uint256 tokenId = _nextTokenId;
+        uint256 maxSupply_ = maxSupply;
+        if (tokenId > maxSupply_) {
+            revert MaxSupplyReached(maxSupply_);
+        }
+        unchecked {
+            _nextTokenId++;
+        }
         _safeMint(to, tokenId);
     }
 
@@ -85,16 +91,12 @@ contract BitBrandV1Rares is
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(UPGRADER_ROLE)
-    {}
-
+    /// @notice Set the base URI for all tokens
     function _baseURI() internal view override returns (string memory) {
-        return _dynamicBaseURI;
+        return _overrideBaseURI;
     }
 
+    /// @dev See {IERC2981-royaltyInfo}
     function royaltyInfo(
         uint256, /*_tokenId*/
         uint256 _salePrice
@@ -105,6 +107,7 @@ contract BitBrandV1Rares is
 
     // The following functions are overrides required by Solidity.
 
+    /// @dev See {IERC165-supportsInterface}.
     function supportsInterface(bytes4 interfaceId)
         public
         view
