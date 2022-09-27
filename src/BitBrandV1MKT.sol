@@ -11,6 +11,8 @@ import "./interfaces/IBitBrandNFT.sol";
 
 error ParameterLengthMismatch();
 error InvalidBuyNFTCall();
+error TransferError();
+error NotEnoughBalance();
 
 /// @title BitBrand Marketplace V1
 /// @author thev.eth
@@ -55,37 +57,29 @@ contract BitBrandV1MKT is Pausable, AccessControl {
         uint256[] calldata prices,
         IERC20[] calldata purchaseTokens
     ) external whenNotPaused onlyRole(LISTER_ROLE) {
-        require(
-            nftContracts.length == nftIds.length &&
-                nftIds.length == prices.length &&
-                prices.length == purchaseTokens.length,
-            ParameterLengthMismatch()
-        );
+        if (
+            nftContracts.length != nftIds.length ||
+            nftIds.length != prices.length ||
+            prices.length != purchaseTokens.length
+        ) {
+            revert ParameterLengthMismatch();
+        }
+
         for (uint256 i = 0; i < nftContracts.length; i++) {
-            bytes32 listingKey = keccak256(
-                abi.encodePacked(nftContracts[i], nftIds[i])
-            );
-            listing[listingKey] = ListingEntry(
-                nftContracts[i],
-                nftIds[i],
-                prices[i],
-                purchaseTokens[i]
-            );
+            bytes32 listingKey = keccak256(abi.encodePacked(nftContracts[i], nftIds[i]));
+            listing[listingKey] = ListingEntry(nftIds[i], prices[i], nftContracts[i], purchaseTokens[i]);
         }
     }
 
-    function deleteListing(
-        IBitBrandNFT[] calldata nftContracts,
-        uint256[] calldata nftIds
-    ) external whenNotPaused onlyRole(LISTER_ROLE) {
-        require(
-            nftContracts.length == nftIds.length,
-            "BitBrandV1MKT: invalid input"
-        );
+    function deleteListing(IBitBrandNFT[] calldata nftContracts, uint256[] calldata nftIds)
+        external
+        whenNotPaused
+        onlyRole(LISTER_ROLE)
+    {
+        if (nftContracts.length != nftIds.length) revert ParameterLengthMismatch();
+
         for (uint256 i = 0; i < nftContracts.length; i++) {
-            bytes32 listingKey = keccak256(
-                abi.encodePacked(nftContracts[i], nftIds[i])
-            );
+            bytes32 listingKey = keccak256(abi.encodePacked(nftContracts[i], nftIds[i]));
             delete listing[listingKey];
         }
     }
@@ -99,19 +93,27 @@ contract BitBrandV1MKT is Pausable, AccessControl {
         bytes32 listingKey = keccak256(abi.encodePacked(nftContract, nftId));
         ListingEntry memory listingEntry = listing[listingKey];
 
-        require(
-            listingEntry.nftContract == nftContract &&
-                listingEntry.nftId == nftId &&
-                listingEntry.price == price &&
-                listingEntry.purchaseToken == purchaseToken,
-            InvalidBuyNFTCall()
-        );
-        // controllare allowance di purchaseToken
-        // controllare che questo contratto abbia il permesso di trasferire l'nft
+        if (listingEntry.nftId != nftId || listingEntry.price != price || listingEntry.purchaseToken == purchaseToken) {
+            revert InvalidBuyNFTCall();
+        }
 
-        // calcolare royalties IERC2981
-        // trasferire royalties se > 0
-        // trasferire purchaseToken all'owner dell'nft
-        // trasferire nft all'acquirente
+        address nftOnwer = nftContract.ownerOf(nftId);
+        uint256 amount = price;
+
+        if (purchaseToken.balanceOf(msg.sender) < amount) {
+            revert NotEnoughBalance();
+        }
+
+        (address royaltyReceiver, uint256 royaltyAmount) = nftContract.royaltyInfo(nftId, price);
+        if (royaltyReceiver != nftOnwer && royaltyAmount > 0) {
+            amount -= royaltyAmount;
+            bool royaltySuccess = purchaseToken.transfer(royaltyReceiver, royaltyAmount);
+            if (!royaltySuccess) revert TransferError();
+        }
+
+        bool success = purchaseToken.transfer(nftOnwer, amount);
+        if (!success) revert TransferError();
+
+        nftContract.safeTransferFrom(nftOnwer, msg.sender, nftId);
     }
 }
