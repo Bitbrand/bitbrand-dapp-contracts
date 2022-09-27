@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "openzeppelin-contracts/contracts/access/AccessControl.sol";
 import "openzeppelin-contracts/contracts/proxy/Clones.sol";
 
-import "./interfaces/IBitBrandNFT.sol";
+import "./interfaces/IBitBrandNFTUpgradeable.sol";
 
 struct ContractMetadata {
     address contractAddress;
@@ -80,7 +80,7 @@ contract BitBrandNFTRepository is AccessControl {
         }
 
         bytes32 salt = keccak256(abi.encodePacked(version_, name_, symbol_));
-        IBitBrandNFT nft = IBitBrandNFT(
+        IBitBrandNFTUpgradeable nft = IBitBrandNFTUpgradeable(
             Clones.cloneDeterministic(metadata.contractAddress, salt)
         );
         nft.initialize(

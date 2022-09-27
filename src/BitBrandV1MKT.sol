@@ -4,10 +4,9 @@ pragma solidity ^0.8.13;
 import "openzeppelin-contracts/contracts/security/Pausable.sol";
 import "openzeppelin-contracts/contracts/access/AccessControl.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 
-import "./interfaces/IERC2981.sol";
-import "./interfaces/IBitBrandNFT.sol";
+import "./interfaces/IERC2981Upgradeable.sol";
+import "./interfaces/IBitBrandNFTUpgradeable.sol";
 
 error ParameterLengthMismatch();
 error InvalidBuyNFTCall();
@@ -45,14 +44,14 @@ contract BitBrandV1MKT is Pausable, AccessControl {
     struct ListingEntry {
         uint256 nftId;
         uint256 price;
-        IERC721 nftContract;
+        IBitBrandNFTUpgradeable nftContract;
         IERC20 purchaseToken;
     }
     mapping(bytes32 => ListingEntry) public listing;
 
     // call per creare listing massivo
     function updateListing(
-        IBitBrandNFT[] calldata nftContracts,
+        IBitBrandNFTUpgradeable[] calldata nftContracts,
         uint256[] calldata nftIds,
         uint256[] calldata prices,
         IERC20[] calldata purchaseTokens
@@ -66,26 +65,35 @@ contract BitBrandV1MKT is Pausable, AccessControl {
         }
 
         for (uint256 i = 0; i < nftContracts.length; i++) {
-            bytes32 listingKey = keccak256(abi.encodePacked(nftContracts[i], nftIds[i]));
-            listing[listingKey] = ListingEntry(nftIds[i], prices[i], nftContracts[i], purchaseTokens[i]);
+            bytes32 listingKey = keccak256(
+                abi.encodePacked(nftContracts[i], nftIds[i])
+            );
+            listing[listingKey] = ListingEntry(
+                nftIds[i],
+                prices[i],
+                nftContracts[i],
+                purchaseTokens[i]
+            );
         }
     }
 
-    function deleteListing(IBitBrandNFT[] calldata nftContracts, uint256[] calldata nftIds)
-        external
-        whenNotPaused
-        onlyRole(LISTER_ROLE)
-    {
-        if (nftContracts.length != nftIds.length) revert ParameterLengthMismatch();
+    function deleteListing(
+        IBitBrandNFTUpgradeable[] calldata nftContracts,
+        uint256[] calldata nftIds
+    ) external whenNotPaused onlyRole(LISTER_ROLE) {
+        if (nftContracts.length != nftIds.length)
+            revert ParameterLengthMismatch();
 
         for (uint256 i = 0; i < nftContracts.length; i++) {
-            bytes32 listingKey = keccak256(abi.encodePacked(nftContracts[i], nftIds[i]));
+            bytes32 listingKey = keccak256(
+                abi.encodePacked(nftContracts[i], nftIds[i])
+            );
             delete listing[listingKey];
         }
     }
 
     function buyNFT(
-        IBitBrandNFT nftContract,
+        IBitBrandNFTUpgradeable nftContract,
         uint256 nftId,
         uint256 price,
         IERC20 purchaseToken
@@ -93,21 +101,26 @@ contract BitBrandV1MKT is Pausable, AccessControl {
         bytes32 listingKey = keccak256(abi.encodePacked(nftContract, nftId));
         ListingEntry memory listingEntry = listing[listingKey];
 
-        if (listingEntry.nftId != nftId || listingEntry.price != price || listingEntry.purchaseToken == purchaseToken) {
+        if (
+            listingEntry.nftContract != nftContract ||
+            listingEntry.nftId != nftId ||
+            listingEntry.price != price ||
+            listingEntry.purchaseToken == purchaseToken
+        ) {
             revert InvalidBuyNFTCall();
         }
 
         address nftOnwer = nftContract.ownerOf(nftId);
         uint256 amount = price;
 
-        if (purchaseToken.balanceOf(msg.sender) < amount) {
-            revert NotEnoughBalance();
-        }
-
-        (address royaltyReceiver, uint256 royaltyAmount) = nftContract.royaltyInfo(nftId, price);
+        (address royaltyReceiver, uint256 royaltyAmount) = nftContract
+            .royaltyInfo(nftId, price);
         if (royaltyReceiver != nftOnwer && royaltyAmount > 0) {
             amount -= royaltyAmount;
-            bool royaltySuccess = purchaseToken.transfer(royaltyReceiver, royaltyAmount);
+            bool royaltySuccess = purchaseToken.transfer(
+                royaltyReceiver,
+                royaltyAmount
+            );
             if (!royaltySuccess) revert TransferError();
         }
 
