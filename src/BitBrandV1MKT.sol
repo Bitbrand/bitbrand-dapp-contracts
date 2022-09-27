@@ -93,12 +93,7 @@ contract BitBrandV1MKT is Pausable, AccessControl {
         bytes32 listingKey = keccak256(abi.encodePacked(nftContract, nftId));
         ListingEntry memory listingEntry = listing[listingKey];
 
-        if (
-            listingEntry.nftContract != nftContract ||
-            listingEntry.nftId != nftId ||
-            listingEntry.price != price ||
-            listingEntry.purchaseToken == purchaseToken
-        ) {
+        if (listingEntry.nftId != nftId || listingEntry.price != price || listingEntry.purchaseToken == purchaseToken) {
             revert InvalidBuyNFTCall();
         }
 
