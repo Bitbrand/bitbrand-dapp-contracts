@@ -76,7 +76,8 @@ contract BitBrandV1MKT is Pausable, AccessControl {
         whenNotPaused
         onlyRole(LISTER_ROLE)
     {
-        require(nftContracts.length == nftIds.length, "BitBrandV1MKT: invalid input");
+        if (nftContracts.length != nftIds.length) revert ParameterLengthMismatch();
+
         for (uint256 i = 0; i < nftContracts.length; i++) {
             bytes32 listingKey = keccak256(abi.encodePacked(nftContracts[i], nftIds[i]));
             delete listing[listingKey];
