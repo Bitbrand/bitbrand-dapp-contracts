@@ -105,7 +105,7 @@ contract BitBrandV1MKT is Pausable, AccessControl {
             listingEntry.nftContract != nftContract ||
             listingEntry.nftId != nftId ||
             listingEntry.price != price ||
-            listingEntry.purchaseToken == purchaseToken
+            listingEntry.purchaseToken != purchaseToken
         ) {
             revert InvalidBuyNFTCall();
         }
