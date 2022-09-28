@@ -117,14 +117,15 @@ contract BitBrandV1MKT is Pausable, AccessControl {
             .royaltyInfo(nftId, price);
         if (royaltyReceiver != nftOnwer && royaltyAmount > 0) {
             amount -= royaltyAmount;
-            bool royaltySuccess = purchaseToken.transfer(
+            bool royaltySuccess = purchaseToken.transferFrom(
+                msg.sender,
                 royaltyReceiver,
                 royaltyAmount
             );
             if (!royaltySuccess) revert TransferError();
         }
 
-        bool success = purchaseToken.transfer(nftOnwer, amount);
+        bool success = purchaseToken.transferFrom(msg.sender, nftOnwer, amount);
         if (!success) revert TransferError();
 
         nftContract.safeTransferFrom(nftOnwer, msg.sender, nftId);
