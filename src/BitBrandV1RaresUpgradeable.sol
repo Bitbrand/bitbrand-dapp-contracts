@@ -100,7 +100,7 @@ contract BitBrandV1Rares is
         uint256, /*_tokenId*/
         uint256 _salePrice
     ) external view returns (address receiver, uint256 royaltyAmount) {
-        uint256 royalty = (_salePrice * royaltyPercentage) / ONE_PERCENT;
+        uint256 royalty = (_salePrice * royaltyPercentage) / MAX_ROYALTY;
         return (royaltyReceiver, royalty);
     }
 

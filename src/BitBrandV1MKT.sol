@@ -113,17 +113,17 @@ contract BitBrandV1MKT is Pausable, AccessControl {
         address nftOnwer = nftContract.ownerOf(nftId);
         uint256 amount = price;
 
-        (address royaltyReceiver, uint256 royaltyAmount) = nftContract
-            .royaltyInfo(nftId, price);
-        if (royaltyReceiver != nftOnwer && royaltyAmount > 0) {
-            amount -= royaltyAmount;
-            bool royaltySuccess = purchaseToken.transferFrom(
-                msg.sender,
-                royaltyReceiver,
-                royaltyAmount
-            );
-            if (!royaltySuccess) revert TransferError();
-        }
+        (address royaltyReceiver, ) = nftContract.royaltyInfo(nftId, price);
+
+        uint256 royaltyAmount = (amount * 20) / 100; // take 20% as marketplace fee for first sale
+        amount -= royaltyAmount;
+
+        bool royaltySuccess = purchaseToken.transferFrom(
+            msg.sender,
+            royaltyReceiver,
+            royaltyAmount
+        );
+        if (!royaltySuccess) revert TransferError();
 
         bool success = purchaseToken.transferFrom(msg.sender, nftOnwer, amount);
         if (!success) revert TransferError();
