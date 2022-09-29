@@ -25,7 +25,7 @@ The variables for each NFT are:
 Goerli
 BitBrandNFTRepository: 0x97867816a7f12692698434f809ca652783614c57
 BitBrandNFT: 0x5109A5561f728E1e16e62C9f1b1306f5175Fba37
-BitBrandMKT: 0xc33C29dccfCDd2D650f689B8C78361d2A84fC7ae
+BitBrandMKT: 0x5bC974D85F89a95d45669A21E12D5f4531E8D368
 HJNFT: 0x8d4cfa08b2167a9991b0574b6d0b75feeb83614c
 ABNFT: 0x83ddbb1bece897e7150d54a2f257793bcccda0aa
 EMNFT: 0xf12776bdb77706665a0d6db94fd1f4f768e86173
@@ -51,4 +51,5 @@ NFT Launch Pipeline
 - Load the assets on IPFS -> Get basepath metadata
 - Generate the metadata json -> Upload to IPFS -> Get basepath metadata
 - Deploy the NFT contract (15000, royalties, ipfs metadata root) -> Get NFT address
+- Create Listing on Marketplace (NFT addresses, nft ids, price, token)
 - Give MINTER_ROLE to the marketplace contract

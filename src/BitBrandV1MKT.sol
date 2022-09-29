@@ -4,9 +4,7 @@ pragma solidity ^0.8.13;
 import "openzeppelin-contracts/contracts/security/Pausable.sol";
 import "openzeppelin-contracts/contracts/access/AccessControl.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-
-import "./interfaces/IERC2981Upgradeable.sol";
-import "./interfaces/IBitBrandNFTUpgradeable.sol";
+import "./interfaces/IBitBrandNFT.sol";
 
 error ParameterLengthMismatch();
 error InvalidBuyNFTCall();
@@ -20,7 +18,7 @@ contract BitBrandV1MKT is Pausable, AccessControl {
     struct ListingEntry {
         uint256 nftId;
         uint256 price;
-        IBitBrandNFTUpgradeable nftContract;
+        IBitBrandNFT nftContract;
         IERC20 purchaseToken;
     }
 
@@ -54,7 +52,7 @@ contract BitBrandV1MKT is Pausable, AccessControl {
     /// @param prices list of prices
     /// @param purchaseTokens list of purchase token addresses
     function updateListing(
-        IBitBrandNFTUpgradeable[] calldata nftContracts,
+        IBitBrandNFT[] calldata nftContracts,
         uint256[] calldata nftIds,
         uint256[] calldata prices,
         IERC20[] calldata purchaseTokens
@@ -94,7 +92,7 @@ contract BitBrandV1MKT is Pausable, AccessControl {
     /// @param nftContracts list of nft contract addresses
     /// @param nftIds list of nft ids
     function deleteListing(
-        IBitBrandNFTUpgradeable[] calldata nftContracts,
+        IBitBrandNFT[] calldata nftContracts,
         uint256[] calldata nftIds
     ) external whenNotPaused onlyRole(LISTER_ROLE) {
         if (nftContracts.length != nftIds.length)
@@ -114,7 +112,7 @@ contract BitBrandV1MKT is Pausable, AccessControl {
     /// @param price price of the nft
     /// @param purchaseToken purchase token address
     function buyNFT(
-        IBitBrandNFTUpgradeable nftContract,
+        IBitBrandNFT nftContract,
         uint256 nftId,
         uint256 price,
         IERC20 purchaseToken

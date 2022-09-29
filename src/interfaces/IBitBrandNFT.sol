@@ -2,16 +2,12 @@
 
 pragma solidity ^0.8.0;
 
-import "openzeppelin-contracts-upgradeable/contracts/token/ERC721/IERC721Upgradeable.sol";
-
-import "./IERC2981Upgradeable.sol";
-
 error InvalidTokenId(uint256 tokenId);
 
 ///
 /// @dev Interface for the BitBrand Rares
 ///
-interface IBitBrandNFTUpgradeable is IERC721Upgradeable, IERC2981Upgradeable {
+interface IBitBrandNFT {
     function initialize(
         address deployer_,
         string memory name_,
