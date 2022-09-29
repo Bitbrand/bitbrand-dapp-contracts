@@ -12,7 +12,7 @@ import "./interfaces/IBitBrandNFTUpgradeable.sol";
 /// @notice BitBrand NFT Rares V1
 /// @author thev.eth
 /// @custom:security-contact security@bitbrand.com
-contract BitBrandV1Rares is
+contract BitBrandV1RaresUpgradeable is
     Initializable,
     ERC721Upgradeable,
     PausableUpgradeable,
