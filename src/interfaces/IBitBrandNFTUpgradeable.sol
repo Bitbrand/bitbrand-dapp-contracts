@@ -6,7 +6,7 @@ import "openzeppelin-contracts-upgradeable/contracts/token/ERC721/IERC721Upgrade
 
 import "./IERC2981Upgradeable.sol";
 
-error MaxSupplyReached(uint256 maxSupply);
+error InvalidTokenId(uint256 tokenId);
 
 ///
 /// @dev Interface for the BitBrand Rares
@@ -21,4 +21,6 @@ interface IBitBrandNFTUpgradeable is IERC721Upgradeable, IERC2981Upgradeable {
         string memory baseURI_,
         uint256 maxSupply_
     ) external;
+
+    function safeMint(address to, uint256 tokenId) external;
 }

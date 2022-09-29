@@ -19,7 +19,6 @@ contract BitBrandV1Rares is
     AccessControlUpgradeable,
     IBitBrandNFTUpgradeable
 {
-    uint256 private _nextTokenId;
     uint256 public maxSupply;
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -59,7 +58,6 @@ contract BitBrandV1Rares is
         royaltyPercentage = royaltyPercentage_;
         _overrideBaseURI = baseURI_;
         maxSupply = maxSupply_;
-        _nextTokenId = 1;
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -70,16 +68,14 @@ contract BitBrandV1Rares is
         _unpause();
     }
 
-    function safeMint(address to) public onlyRole(MINTER_ROLE) {
-        uint256 tokenId = _nextTokenId;
-        uint256 maxSupply_ = maxSupply;
-        if (tokenId > maxSupply_) {
-            revert MaxSupplyReached(maxSupply_);
+    function safeMint(address to, uint256 tokenId)
+        public
+        onlyRole(MINTER_ROLE)
+    {
+        if (tokenId == 0 || tokenId > maxSupply) {
+            revert InvalidTokenId(tokenId);
         }
-        unchecked {
-            _nextTokenId++;
-        }
-        _safeMint(to, tokenId);
+        _safeMint(to, tokenId, "");
     }
 
     function _beforeTokenTransfer(

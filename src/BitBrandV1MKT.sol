@@ -11,19 +11,33 @@ import "./interfaces/IBitBrandNFTUpgradeable.sol";
 error ParameterLengthMismatch();
 error InvalidBuyNFTCall();
 error TransferError();
-error NotEnoughBalance();
 
 /// @title BitBrand Marketplace V1
 /// @author thev.eth
 /// @author bluecco
 /// @custom:security-contact security@bitbrand.com
 contract BitBrandV1MKT is Pausable, AccessControl {
+    struct ListingEntry {
+        uint256 nftId;
+        uint256 price;
+        IBitBrandNFTUpgradeable nftContract;
+        IERC20 purchaseToken;
+    }
+
+    event TreasuryUpdated(address indexed treasury);
+
     bytes32 public constant LISTER_ROLE = keccak256("LISTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
+    mapping(bytes32 => ListingEntry) public listing;
+    address public treasury;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
+    constructor(address _treasury) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(LISTER_ROLE, msg.sender);
+        _grantRole(PAUSER_ROLE, msg.sender);
+        treasury = _treasury;
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -34,22 +48,11 @@ contract BitBrandV1MKT is Pausable, AccessControl {
         _unpause();
     }
 
-    // struct per il listing
-    // - NFT contract => IBitBrandNFT
-    // - NFT id
-    // - price => uint256
-    // - purchase token ERC20
-    // mapping del listing => chiave keccak256 (NFTContract, NFT token id)
-    // Holds all the information about deployable nft versions
-    struct ListingEntry {
-        uint256 nftId;
-        uint256 price;
-        IBitBrandNFTUpgradeable nftContract;
-        IERC20 purchaseToken;
-    }
-    mapping(bytes32 => ListingEntry) public listing;
-
-    // call per creare listing massivo
+    /// @notice Update listing entries
+    /// @param nftContracts list of nft contract addresses
+    /// @param nftIds list of nft ids
+    /// @param prices list of prices
+    /// @param purchaseTokens list of purchase token addresses
     function updateListing(
         IBitBrandNFTUpgradeable[] calldata nftContracts,
         uint256[] calldata nftIds,
@@ -77,6 +80,19 @@ contract BitBrandV1MKT is Pausable, AccessControl {
         }
     }
 
+    /// @notice Update Treasury
+    /// @param newTreasury new treasury address
+    function updateTreasury(address newTreasury)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        treasury = newTreasury;
+        emit TreasuryUpdated(newTreasury);
+    }
+
+    /// @notice Delete listing entries
+    /// @param nftContracts list of nft contract addresses
+    /// @param nftIds list of nft ids
     function deleteListing(
         IBitBrandNFTUpgradeable[] calldata nftContracts,
         uint256[] calldata nftIds
@@ -92,6 +108,11 @@ contract BitBrandV1MKT is Pausable, AccessControl {
         }
     }
 
+    /// @notice Buy NFT
+    /// @param nftContract nft contract address
+    /// @param nftId nft id
+    /// @param price price of the nft
+    /// @param purchaseToken purchase token address
     function buyNFT(
         IBitBrandNFTUpgradeable nftContract,
         uint256 nftId,
@@ -110,24 +131,9 @@ contract BitBrandV1MKT is Pausable, AccessControl {
             revert InvalidBuyNFTCall();
         }
 
-        address nftOnwer = nftContract.ownerOf(nftId);
-        uint256 amount = price;
-
-        (address royaltyReceiver, ) = nftContract.royaltyInfo(nftId, price);
-
-        uint256 royaltyAmount = (amount * 20) / 100; // take 20% as marketplace fee for first sale
-        amount -= royaltyAmount;
-
-        bool royaltySuccess = purchaseToken.transferFrom(
-            msg.sender,
-            royaltyReceiver,
-            royaltyAmount
-        );
-        if (!royaltySuccess) revert TransferError();
-
-        bool success = purchaseToken.transferFrom(msg.sender, nftOnwer, amount);
+        bool success = purchaseToken.transferFrom(msg.sender, treasury, price);
         if (!success) revert TransferError();
 
-        nftContract.safeTransferFrom(nftOnwer, msg.sender, nftId);
+        nftContract.safeMint(msg.sender, nftId);
     }
 }
