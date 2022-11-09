@@ -2,14 +2,14 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/BitBrandV1MKT.sol";
+import "../src/BitBrandV1Dropper.sol";
 
-contract BitBrandV1MKTTest is Test {
-    BitBrandV1MKT internal mktContract;
+contract BitBrandV1DropperTest is Test {
+    BitBrandV1Dropper internal dropperContract;
     address internal treasury;
 
     function setUp() public {
-        mktContract = new BitBrandV1MKT(treasury);
+        dropperContract = new BitBrandV1Dropper(treasury);
         treasury = address(1);
         vm.label(treasury, "treasury");
     }

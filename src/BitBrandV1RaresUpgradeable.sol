@@ -79,14 +79,6 @@ contract BitBrandV1RaresUpgradeable is
         _safeMint(to, tokenId, "");
     }
 
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal override whenNotPaused {
-        super._beforeTokenTransfer(from, to, tokenId);
-    }
-
     /// @notice Set the base URI for all tokens
     function _baseURI() internal view override returns (string memory) {
         return _overrideBaseURI;
