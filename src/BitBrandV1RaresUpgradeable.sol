@@ -73,7 +73,7 @@ contract BitBrandV1RaresUpgradeable is
         public
         onlyRole(MINTER_ROLE)
     {
-        if (tokenId == 0 || tokenId > maxSupply) {
+        if (tokenId >= maxSupply) {
             revert InvalidTokenId(tokenId);
         }
         _safeMint(to, tokenId, "");

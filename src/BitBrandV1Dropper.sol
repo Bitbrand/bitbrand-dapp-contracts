@@ -18,6 +18,7 @@ error TransferError();
 /// @custom:security-contact security@bitbrand.com
 contract BitBrandV1Dropper is Pausable, AccessControl {
     event TreasuryUpdated(address indexed treasury);
+    event DropStarted(IBitBrandNFT indexed drop);
 
     bytes32 public constant LISTER_ROLE = keccak256("LISTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
@@ -52,6 +53,7 @@ contract BitBrandV1Dropper is Pausable, AccessControl {
 
     /// @notice add new drops
     /// @notice drops that are added are final and cannot be changed
+    /// @dev creativity are 0-based indexed
     /// @param _drops list of nft contract addresses
     /// @param _creativityData data of each creativity of the drop
     function addDrops(
@@ -68,28 +70,43 @@ contract BitBrandV1Dropper is Pausable, AccessControl {
                 revert DropAlreadyExists();
             }
 
-            uint256 nextOffsetId = 0;
+            uint256 expectedOffsetId = 0;
             for (uint256 j = 0; j < _creativityData[i].length; j++) {
                 if (
-                    !validateCreativityData(_creativityData[i][j], nextOffsetId)
+                    !validateCreativityData(
+                        _creativityData[i][j],
+                        expectedOffsetId
+                    )
                 ) {
                     revert InvalidCreativityDataAtIndex(i, j);
                 }
-                nextOffsetId += _creativityData[i][j].totalSupply;
+                expectedOffsetId += _creativityData[i][j].totalSupply;
                 drops[_drops[i]][j] = _creativityData[i][j];
+                emit DropStarted(_drops[i]);
             }
         }
     }
 
+    /// @notice validates creativity data
+    /// @dev valid drops must have
+    /// @dev 1. a mint price greater than 0
+    /// @dev 2. a non 0 ERC20 token address
+    /// @dev 3. a total supply greater than 0
+    /// @dev 4. a minted supply of 0
+    /// @dev 5. a valid consecutive offset id based on the sum of single creativity total supply
+    /// @param data creativity data
+    /// @param expectedOffsetId expected offset id, the computation is delegated to the caller
+    /// @return true if valid, false otherwise
     function validateCreativityData(
         CreativityData calldata data,
-        uint256 nextOffsetId
+        uint256 expectedOffsetId
     ) internal pure returns (bool) {
         return
-            (data.mintPrice > 0 && data.mintToken != IERC20(address(0))) ||
-            data.totalSupply > 0 ||
-            data.mintedSupply == 0 ||
-            data.offsetId == nextOffsetId;
+            data.mintPrice > 0 &&
+            data.mintToken != IERC20(address(0)) &&
+            data.totalSupply > 0 &&
+            data.mintedSupply == 0 &&
+            data.offsetId == expectedOffsetId;
     }
 
     /// @notice Update Treasury
@@ -111,7 +128,7 @@ contract BitBrandV1Dropper is Pausable, AccessControl {
     {
         CreativityData storage creativity = drops[drop][creativityId];
         if (
-            creativity.mintPrice == 0 || // covers the case where the drop does not exist
+            creativity.totalSupply == 0 || // covers the case where the drop does not exist
             creativity.mintedSupply >= creativity.totalSupply
         ) {
             revert InvalidBuyNFTCall();
