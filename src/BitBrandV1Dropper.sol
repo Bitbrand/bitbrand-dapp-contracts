@@ -111,21 +111,22 @@ contract BitBrandV1Dropper is Pausable, AccessControl {
 
     /// @notice Update Treasury
     /// @param newTreasury new treasury address
-    function updateTreasury(address newTreasury)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function updateTreasury(
+        address newTreasury
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         treasury = newTreasury;
         emit TreasuryUpdated(newTreasury);
     }
 
     /// @notice mint next available NFT from a drop and a creativity
+    /// @param to address of the receiver
     /// @param drop contract address of the nft collection
     /// @param creativityId id of the creativity
-    function mintNextAvailable(IBitBrandNFT drop, uint256 creativityId)
-        external
-        whenNotPaused
-    {
+    function mintNextAvailableTo(
+        address to,
+        IBitBrandNFT drop,
+        uint256 creativityId
+    ) external whenNotPaused {
         CreativityData storage creativity = drops[drop][creativityId];
         if (
             creativity.totalSupply == 0 || // covers the case where the drop does not exist
@@ -144,6 +145,6 @@ contract BitBrandV1Dropper is Pausable, AccessControl {
         uint256 tokenId = creativity.offsetId + creativity.mintedSupply;
         creativity.mintedSupply += 1;
 
-        drop.safeMint(msg.sender, tokenId);
+        drop.safeMint(to, tokenId);
     }
 }
